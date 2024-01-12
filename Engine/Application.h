@@ -5,6 +5,11 @@
 #ifndef REVOLUTION_3D_APPLICATION_H
 #define REVOLUTION_3D_APPLICATION_H
 
+//STD
+#include <vector>
+
+#include "Scene.h"
+
 struct GLFWwindow;
 
 namespace R3D {
@@ -24,17 +29,18 @@ namespace R3D {
     private:
         void InitRenderer();
 
-        void GameLoop();
+        int GameLoop();
         void Cleanup();
-        void Render();
-
-        void ProcessInput();
 
 
     private:
+        std::vector<Scene> mScenes;
+
         bool mRunning = false;
 
         GLFWwindow* mWindow;
+
+        void SetupImGui();
     };
 }
 

@@ -10,11 +10,15 @@
 //STD
 #include <cassert>
 
-#include "Application.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <imgui.h>
+#include "imgui_impl_opengl3.h"
+#include "imgui_impl_glfw.h"
 
+#include "Application.h"
+#include "RendererTest.h"
 
 
 using namespace R3D;
@@ -31,39 +35,58 @@ Application::~Application() {
 int Application::Run() {
     mRunning = true;
 
-    InitRenderer();
+    int exitCode = 0;
 
-    GameLoop();
+
+    InitRenderer();
+    SetupImGui();
+
+    exitCode = GameLoop();
     Cleanup();
 
     mRunning = false;
 
 
-    return 1;
+    return exitCode;
 }
 
-void Application::GameLoop() {
+int Application::GameLoop() {
+    Scene* curScene = nullptr;
+    HomeScene* homeScene = new HomeScene(curScene);
+    curScene = homeScene;
+
+    homeScene->RegisterScene<RendererTest>("Renderer Test");
+
+
     while(IsRunning() && !WindowShouldClose()){
-        ProcessInput();
+        curScene->ProcessInput();
 
+        curScene->Update();
+        curScene->Render();
 
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
 
-        Render();
+        ImGui::Begin("Scene");
+
+        if(curScene != homeScene && ImGui::Button("<-")){
+            delete curScene;
+            curScene = homeScene;
+        }
+
+        curScene->RenderImGui();
+
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(mWindow);
         glfwPollEvents();
     }
-}
 
-void Application::Render() {
-
-}
-
-void Application::ProcessInput() {
-    if(glfwGetKey(mWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS){
-        glfwSetWindowShouldClose(mWindow, true);
-    }
-
+    return 0;
 }
 
 void Application::InitRenderer() {
@@ -105,5 +128,18 @@ bool Application::WindowShouldClose() {
     return glfwWindowShouldClose(mWindow);
 }
 
+void Application::SetupImGui() {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
+    ImGui::StyleColorsDark();
+
+    const char* glsl_version = "#version 460";
+    ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+}
 
 
